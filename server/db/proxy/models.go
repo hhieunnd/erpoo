@@ -9,7 +9,7 @@ import (
 )
 
 type Team struct {
-	ID          pgtype.UUID
-	Name        pgtype.Text
-	Description pgtype.Text
+	ID          pgtype.UUID `json:"id"`
+	Name        pgtype.Text `json:"name"`
+	Description pgtype.Text `json:"description"`
 }

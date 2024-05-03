@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	dbproxy "erpoo/db/proxy"
-	"fmt"
 	"log"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -22,19 +22,51 @@ func main() {
 
 	queries := dbproxy.New(conn)
 
-	newParams := dbproxy.CreateTeamParams{
-		ID:          pgtype.UUID{Bytes: uuid.New(), Valid: true},
-		Name:        pgtype.Text{String: "Team1"},
-		Description: pgtype.Text{String: "Des1"}}
+	app := fiber.New(fiber.Config{
+		CaseSensitive: true,
+		StrictRouting: true,
+		ServerHeader:  "ERP",
+		AppName:       "ERP v1.0.1",
+	})
 
-	fmt.Printf("new params %v", newParams)
+	app.Get("/api/teams", func(c *fiber.Ctx) error {
+		teams, err := queries.GetListTeams(ctx)
 
-	// create new team
-	team, err := queries.CreateTeam(ctx, newParams)
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
 
-	if err != nil {
-		log.Fatalf("err => %v", err)
-	}
+		return c.JSON(teams)
+	})
 
-	fmt.Printf("team %v", team)
+	app.Post("/api/teams", func(c *fiber.Ctx) error {
+
+		type Params struct {
+			// ID          pgtype.UUID `json:"id"`
+			Name        pgtype.Text `json:"name"`
+			Description pgtype.Text `json:"description"`
+		}
+
+		params := new(Params)
+
+		p := new(dbproxy.CreateTeamParams)
+
+		if err := c.BodyParser(params); err != nil {
+			return err
+		}
+
+		p.ID = pgtype.UUID{Bytes: uuid.New(), Valid: true}
+		p.Name = params.Name
+		p.Description = params.Description
+
+		team, err := queries.CreateTeam(ctx, *p)
+
+		if err != nil {
+			return c.SendStatus(fiber.StatusBadRequest)
+		}
+
+		return c.JSON(team)
+	})
+
+	app.Listen(":3000")
 }

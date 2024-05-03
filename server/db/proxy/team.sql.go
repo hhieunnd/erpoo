@@ -19,9 +19,9 @@ RETURNING id, name, description
 `
 
 type CreateTeamParams struct {
-	ID          pgtype.UUID
-	Name        pgtype.Text
-	Description pgtype.Text
+	ID          pgtype.UUID `json:"id"`
+	Name        pgtype.Text `json:"name"`
+	Description pgtype.Text `json:"description"`
 }
 
 func (q *Queries) CreateTeam(ctx context.Context, arg CreateTeamParams) (Team, error) {
@@ -41,25 +41,13 @@ func (q *Queries) DeleteTeam(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
-const getTeam = `-- name: GetTeam :one
-SELECT id, name, description FROM teams
-WHERE id = $1 LIMIT 1
-`
-
-func (q *Queries) GetTeam(ctx context.Context, id pgtype.UUID) (Team, error) {
-	row := q.db.QueryRow(ctx, getTeam, id)
-	var i Team
-	err := row.Scan(&i.ID, &i.Name, &i.Description)
-	return i, err
-}
-
-const listTeams = `-- name: ListTeams :many
+const getListTeams = `-- name: GetListTeams :many
 SELECT id, name, description FROM teams
 ORDER BY name
 `
 
-func (q *Queries) ListTeams(ctx context.Context) ([]Team, error) {
-	rows, err := q.db.Query(ctx, listTeams)
+func (q *Queries) GetListTeams(ctx context.Context) ([]Team, error) {
+	rows, err := q.db.Query(ctx, getListTeams)
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +66,18 @@ func (q *Queries) ListTeams(ctx context.Context) ([]Team, error) {
 	return items, nil
 }
 
+const getTeam = `-- name: GetTeam :one
+SELECT id, name, description FROM teams
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetTeam(ctx context.Context, id pgtype.UUID) (Team, error) {
+	row := q.db.QueryRow(ctx, getTeam, id)
+	var i Team
+	err := row.Scan(&i.ID, &i.Name, &i.Description)
+	return i, err
+}
+
 const updateTeam = `-- name: UpdateTeam :one
 UPDATE teams
 SET "name"=$1, description=$2
@@ -86,9 +86,9 @@ RETURNING id, name, description
 `
 
 type UpdateTeamParams struct {
-	Name        pgtype.Text
-	Description pgtype.Text
-	ID          pgtype.UUID
+	Name        pgtype.Text `json:"name"`
+	Description pgtype.Text `json:"description"`
+	ID          pgtype.UUID `json:"id"`
 }
 
 func (q *Queries) UpdateTeam(ctx context.Context, arg UpdateTeamParams) (Team, error) {

@@ -3,7 +3,7 @@
 SELECT * FROM teams
 WHERE id = $1 LIMIT 1;
 
--- name: ListTeams :many
+-- name: GetListTeams :many
 SELECT * FROM teams
 ORDER BY name;
 
